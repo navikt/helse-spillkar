@@ -16,6 +16,7 @@ servers:
   
 tags:
   - name: Hente alle samlinger av inngangsvilkår
+  - name: Send inn vurderinger av inngangsvilkår
 
 paths:
     /vurderte-inngangsvilkår/alle:
@@ -37,40 +38,25 @@ paths:
               application/json:
                 schema:
                   $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkårResponse'
-  
+
+    /vurderte-inngangsvilkår/manuelle-vurderinger:
+      post:
+        summary: Saksbehandler vurderer ett eller flere inngangsvilkår
+        tags:
+          - Send inn vurderinger av inngangsvilkår
+        description: |-
+          Det må være et on-behalf-of-token hvor vi fisker ut navident.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManueltVurderteInngangsvilkår'
+        responses:
+          '204':
+            description: No content
+
 components:
   schemas:
-    RequestV1:
-      type: object
-      required: ["personidentifikator", "organisasjonsnummer", "fraOgMedDato", "tilOgMedDato"]
-      properties:
-        personidentifikator:
-          type: string
-          pattern: '^\d{11}$'
-          description: Personidentifikator for personen
-          example: 11111111111
-        organisasjonsnummer:
-          type: string
-          pattern: '^\d{9}$'
-          description: Organisasjonsnummer til underenheten som er tilsluttet ordningen
-          example: 999999999
-        fraOgMedDato:
-          type: string
-          format: date
-          description: Fra og med dato
-          example: 2021-01-01
-        tilOgMedDato:
-          type: string
-          format: date
-          description: Til og med dato
-          example: 2021-01-31
-        minimumSykdomsgrad:
-          type: integer
-          minimum: 1
-          maximum: 100
-          description: Anbefalt, men valgfri. Minimum sykdomsgrad som er aktuelt å utlevere informasjon om for å vurdere vilkårene for AFP for den aktuelle underenheten
-          example: 80
-
     HentAlleSamlingerAvInngangsvilkår:
       type: object
       required: ["personidentifikatorer", "skjæringstidspunkt"]
@@ -85,6 +71,28 @@ components:
           type: string
           format: date
           example: 2021-01-01
+
+    ManueltVurderteInngangsvilkår:
+      type: object
+      required: ["personidentifikatorer", "skjæringstidspunkt", "versjon", "vurderteInngangsvilkår"]
+      properties:
+        personidentifikatorer:
+          type: array
+          items:
+            type: string
+            description: Personidentifikator for personen
+            example: 11111111111
+        skjæringstidspunkt:
+          type: string
+          format: date
+          example: 2021-01-01
+        versjon:
+          type: integer
+          description: Spillkar skal kun lagre disse nye inngangsvilkårene gitt at dette er den siste versjonen av samling
+        vurderteInngangsvilkår:
+          type: array
+          items:
+            $ref: '#/components/schemas/ManueltVurdertInngangsvilkår'
 
     VurdertInngangsvilkår:
       type: object
@@ -129,6 +137,26 @@ components:
             begrunnelse:
               type: string
               example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
+
+    ManueltVurdertInngangsvilkår:
+      type: object
+      required: ["vilkårskode", "vurderingskode", "tidspunkt", "begrunnelse"]
+      properties:
+        tidspunkt:
+          type: string
+          format: date-time
+          description: Når vurderingen ble gjort
+        vilkårskode:
+          type: string
+          description: Koden til det vilkåret som er vurdert
+          example: MEDLEMSKAP
+        vurderingskode:
+          type: string
+          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
+          example: MEDLEMSKAP_JA
+        begrunnelse:
+          type: string
+          example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
 
     SamlingAvVurderteInngangsvilkår:
       type: object
