@@ -15,7 +15,7 @@ servers:
     description: Lokalt
   
 tags:
-  - name: Hente alle samlinger av inngangsvilkår
+  - name: Hent inngangsvilkår
   - name: Send inn vurderinger av inngangsvilkår
 
 paths:
@@ -23,14 +23,15 @@ paths:
       post:
         summary: Henter ut alle samlinger av inngangsvilkår gjort på personen på et gitt skjæringstidspunkt
         tags:
-          - Hente alle samlinger av inngangsvilkår
+          - Hent inngangsvilkår
         description: |-
-          TODO
+          - Speilvendt henter ut alle samlinger av inngangsvilkår for å vise historikk i Speil.
+          - Det må være et on-behalf-of-token fra saksbehandler.
         requestBody:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HentAlleSamlingerAvInngangsvilkår'
+                $ref: '#/components/schemas/HentInngangsvilkår'
         responses:
           '200':
             description: OK
@@ -39,13 +40,39 @@ paths:
                 schema:
                   $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkårResponse'
 
+    /vurderte-inngangsvilkår/gjeldende:
+      post:
+        summary: Henter ut den gjeldende samlingen av inngangsvilkår gjort på personen på et gitt skjæringstidspunkt
+        tags:
+          - Hent inngangsvilkår
+        description: |-
+          - Spleis sender ut et behov om vurderte inngangsvilkår. 
+          - Den asynkrone biten av Spillkar løser dette behovet ved å requeste dette endepunktet.
+          - Dette endepunktet skal kreve en rolle som bare den asynkrone biten av Spillkar har. 
+          - Løsningen på behovet er en-til-en med responsen på dette endepunktet.
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HentInngangsvilkår'
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GjeldendeSamlingAvVurderteInngangsvilkår'
+
     /vurderte-inngangsvilkår/manuelle-vurderinger:
       post:
         summary: Saksbehandler vurderer ett eller flere inngangsvilkår
         tags:
           - Send inn vurderinger av inngangsvilkår
         description: |-
-          Det må være et on-behalf-of-token hvor vi fisker ut navident.
+          - Brukes når saksbehandler manuelt har vurdert ett eller flere inngangsvilkår.
+          - Det må være et on-behalf-of-token hvor vi fisker ut navident.
+          - Spillkar sørger for at det sendes ut en melding på kafka om at det foreligger nye vilkår på skjæringstidspunktet for personen.
+          - Spleis lytter på denne meldingen og reberegner perioder fra og med skjæringstidspunktet.
         requestBody:
           content:
             application/json:
@@ -61,22 +88,20 @@ paths:
         tags:
           - Send inn vurderinger av inngangsvilkår
         description: |-
-          TODO
+          - Brukes av Spleis når automatiske vurderinger av inngangsvilkår har blitt gjort.
+          - Spleis sender ut en melding på rapiden som den asynkrone av Spillkar lytter på, og requester dette endepunktet.
         requestBody:
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AutomatiskVurderteInngangsvilkår'
         responses:
-          '201':
-            description: Created
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/NySamlingAvInngangsvilkår'
+          '204':
+            description: No content
+
 components:
   schemas:
-    HentAlleSamlingerAvInngangsvilkår:
+    HentInngangsvilkår:
       type: object
       required: ["personidentifikatorer", "skjæringstidspunkt"]
       properties:
@@ -161,6 +186,19 @@ components:
               type: string
               example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
 
+    MinimalVurdertInngangsvilkår:
+      type: object
+      required: ["vilkårskode"]
+      properties:
+        vilkårskode:
+          type: string
+          description: Koden til det vilkåret som er vurdert
+          example: MEDLEMSKAP
+        vurderingskode:
+          type: string
+          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
+          example: MEDLEMSKAP_JA
+
     ManueltVurdertInngangsvilkår:
       type: object
       required: ["vilkårskode", "vurderingskode", "tidspunkt", "begrunnelse"]
@@ -202,7 +240,7 @@ components:
 
     SamlingAvVurderteInngangsvilkår:
       type: object
-      required: [ "versjon", "skjæringstidspunkt", "vurderteInngangsvilkår" ]
+      required: [ "versjon", "skjæringstidspunkt", "vurderteInngangsvilkår", "samlingAvVurderteInngangsvilkårId" ]
       properties:
         samlingAvVurderteInngangsvilkårId:
           type: string
@@ -218,6 +256,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VurdertInngangsvilkår'
+
+    GjeldendeSamlingAvVurderteInngangsvilkår:
+      type: object
+      required: [ "vurderteInngangsvilkår", "samlingAvVurderteInngangsvilkårId" ]
+      properties:
+        samlingAvVurderteInngangsvilkårId:
+          type: string
+          format: uuid
+        vurderteInngangsvilkår:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinimalVurdertInngangsvilkår'
 
     SamlingAvVurderteInngangsvilkårResponse:
       type: object
@@ -245,10 +295,3 @@ components:
             medlemskapId:
               type: string
               format: uuid
-
-    NySamlingAvInngangsvilkår:
-      type: object
-      properties:
-        samlingAvVurderteInngangsvilkårId:
-          type: string
-          format: uuid
