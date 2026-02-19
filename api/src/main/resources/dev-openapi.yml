@@ -55,6 +55,25 @@ paths:
           '204':
             description: No content
 
+    /vurderte-inngangsvilkår/automatiske-vurderinger:
+      post:
+        summary: Datamaskinen vurderer ett eller flere inngangsvilkår
+        tags:
+          - Send inn vurderinger av inngangsvilkår
+        description: |-
+          TODO
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutomatiskVurderteInngangsvilkår'
+        responses:
+          '201':
+            description: Created
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/NySamlingAvInngangsvilkår'
 components:
   schemas:
     HentAlleSamlingerAvInngangsvilkår:
@@ -74,25 +93,42 @@ components:
 
     ManueltVurderteInngangsvilkår:
       type: object
-      required: ["personidentifikatorer", "skjæringstidspunkt", "versjon", "vurderteInngangsvilkår"]
+      required: ["personidentifikator", "skjæringstidspunkt", "versjon", "vurderteInngangsvilkår"]
       properties:
-        personidentifikatorer:
-          type: array
-          items:
-            type: string
-            description: Personidentifikator for personen
-            example: 11111111111
+        personidentifikator:
+          type: string
+          description: Personidentifikator for personen
+          example: 11111111111
         skjæringstidspunkt:
           type: string
           format: date
           example: 2021-01-01
         versjon:
           type: integer
+          example: 1
           description: Spillkar skal kun lagre disse nye inngangsvilkårene gitt at dette er den siste versjonen av samling
         vurderteInngangsvilkår:
           type: array
           items:
             $ref: '#/components/schemas/ManueltVurdertInngangsvilkår'
+
+    AutomatiskVurderteInngangsvilkår:
+      type: object
+      required: ["personidentifikator", "skjæringstidspunkt", "vurderteInngangsvilkår"]
+      properties:
+        personidentifikator:
+          type: string
+          description: Personidentifikator for personen
+          example: 11111111111
+        skjæringstidspunkt:
+          type: string
+          format: date
+          example: 2021-01-01
+          description: Spillkar skal kun lagre disse nye inngangsvilkårene gitt at dette er den siste versjonen av samling
+        vurderteInngangsvilkår:
+          type: array
+          items:
+            $ref: '#/components/schemas/AutomatiskVurdertInngangsvilkår'
 
     VurdertInngangsvilkår:
       type: object
@@ -113,20 +149,7 @@ components:
           description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
           example: MEDLEMSKAP_JA
         automatiskVurdering:
-          type: object
-          description: Vurdert automatisk av noen
-          properties:
-            system:
-              type: string
-            versjon:
-              type: string
-            grunnlagsdata:
-              type: object
-              description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen
-              properties:
-                medlemskapId:
-                  type: string
-                  format: uuid
+          $ref: '#/components/schemas/AutomatiskVurdering'
         manuellVurdering:
           type: object
           description: Vurdert manuelt av saksbehandler
@@ -158,6 +181,25 @@ components:
           type: string
           example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
 
+    AutomatiskVurdertInngangsvilkår:
+      type: object
+      required: ["vilkårskode", "tidspunkt", automatiskVurdering"]
+      properties:
+        tidspunkt:
+          type: string
+          format: date-time
+          description: Når vurderingen ble gjort
+        vilkårskode:
+          type: string
+          description: Koden til det vilkåret som er vurdert
+          example: MEDLEMSKAP
+        vurderingskode:
+          type: string
+          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
+          example: MEDLEMSKAP_JA
+        automatiskVurdering:
+          $ref: '#/components/schemas/AutomatiskVurdering'
+
     SamlingAvVurderteInngangsvilkår:
       type: object
       required: [ "versjon", "skjæringstidspunkt", "vurderteInngangsvilkår" ]
@@ -185,3 +227,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkår'
+
+    AutomatiskVurdering:
+      type: object
+      description: Vurdert automatisk av noen
+      properties:
+        system:
+          type: string
+          example: Spleis
+        versjon:
+          type: string
+          example: 2026.02.19-10.07-793bcfe
+        grunnlagsdata:
+          type: object
+          description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen
+          properties:
+            medlemskapId:
+              type: string
+              format: uuid
+
+    NySamlingAvInngangsvilkår:
+      type: object
+      properties:
+        samlingAvVurderteInngangsvilkårId:
+          type: string
+          format: uuid
