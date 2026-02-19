@@ -1,0 +1,159 @@
+openapi: "3.0.0"
+info:
+  title: Spillkar (Spillkår) 🎻
+  description: |-
+    Spillkar gjør noe greier med vilkår.
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+
+servers:
+  - url: https://spillkar.intern.dev.nav.no
+    description: Test
+  - url: http://localhost:8080
+    description: Lokalt
+  
+tags:
+  - name: Hente alle samlinger av inngangsvilkår
+
+paths:
+    /vurderte-inngangsvilkår/alle:
+      post:
+        summary: Henter ut alle samlinger av inngangsvilkår gjort på personen på et gitt skjæringstidspunkt
+        tags:
+          - Hente alle samlinger av inngangsvilkår
+        description: |-
+          TODO
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HentAlleSamlingerAvInngangsvilkår'
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkårResponse'
+  
+components:
+  schemas:
+    RequestV1:
+      type: object
+      required: ["personidentifikator", "organisasjonsnummer", "fraOgMedDato", "tilOgMedDato"]
+      properties:
+        personidentifikator:
+          type: string
+          pattern: '^\d{11}$'
+          description: Personidentifikator for personen
+          example: 11111111111
+        organisasjonsnummer:
+          type: string
+          pattern: '^\d{9}$'
+          description: Organisasjonsnummer til underenheten som er tilsluttet ordningen
+          example: 999999999
+        fraOgMedDato:
+          type: string
+          format: date
+          description: Fra og med dato
+          example: 2021-01-01
+        tilOgMedDato:
+          type: string
+          format: date
+          description: Til og med dato
+          example: 2021-01-31
+        minimumSykdomsgrad:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Anbefalt, men valgfri. Minimum sykdomsgrad som er aktuelt å utlevere informasjon om for å vurdere vilkårene for AFP for den aktuelle underenheten
+          example: 80
+
+    HentAlleSamlingerAvInngangsvilkår:
+      type: object
+      required: ["personidentifikatorer", "skjæringstidspunkt"]
+      properties:
+        personidentifikatorer:
+          type: array
+          items:
+            type: string
+            description: Personidentifikator for personen
+            example: 11111111111
+        skjæringstidspunkt:
+          type: string
+          format: date
+          example: 2021-01-01
+
+    VurdertInngangsvilkår:
+      type: object
+      oneOf:
+        - required: ["vilkårskode", "tidspunkt", "automatiskVurdering"]
+        - required: ["vilkårskode", "tidspunkt", "manuellVurdering"]
+      properties:
+        tidspunkt:
+          type: string
+          format: date-time
+          description: Når vurderingen ble gjort
+        vilkårskode:
+          type: string
+          description: Koden til det vilkåret som er vurdert
+          example: MEDLEMSKAP
+        vurderingskode:
+          type: string
+          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
+          example: MEDLEMSKAP_JA
+        automatiskVurdering:
+          type: object
+          description: Vurdert automatisk av noen
+          properties:
+            system:
+              type: string
+            versjon:
+              type: string
+            grunnlagsdata:
+              type: object
+              description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen
+              properties:
+                medlemskapId:
+                  type: string
+                  format: uuid
+        manuellVurdering:
+          type: object
+          description: Vurdert manuelt av saksbehandler
+          properties:
+            navident:
+              type: string
+              example: P31337
+            begrunnelse:
+              type: string
+              example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
+
+    SamlingAvVurderteInngangsvilkår:
+      type: object
+      required: [ "versjon", "skjæringstidspunkt", "vurderteInngangsvilkår" ]
+      properties:
+        samlingAvVurderteInngangsvilkårId:
+          type: string
+          format: uuid
+        versjon:
+          type: integer
+          description: Versjon av samling av vurderte inngangsvilkår (stigende løpenummer)
+          example: 1
+        skjæringstidspunkt:
+          type: string
+          format: date
+        vurderteInngangsvilkår:
+          type: array
+          items:
+            $ref: '#/components/schemas/VurdertInngangsvilkår'
+
+    SamlingAvVurderteInngangsvilkårResponse:
+      type: object
+      required: [ "samlingAvVurderteInngangsvilkår" ]
+      properties:
+        samlingAvVurderteInngangsvilkår:
+          type: array
+          items:
+            $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkår'
