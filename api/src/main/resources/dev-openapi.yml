@@ -157,6 +157,7 @@ components:
 
     VurdertInngangsvilkår:
       type: object
+      description: Et vurdert vilkår har enten automatiskVurdering eller manuellVurdering. Aldri begge, men alltid en.
       oneOf:
         - required: ["vilkårskode", "tidspunkt", "automatiskVurdering"]
         - required: ["vilkårskode", "tidspunkt", "manuellVurdering"]
@@ -171,12 +172,13 @@ components:
           example: MEDLEMSKAP
         vurderingskode:
           type: string
-          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket
+          description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket. Optional verdi der hvor automatiske vurderinger ikke har klart å komme frem til en vurderingskode.
           example: MEDLEMSKAP_JA
         automatiskVurdering:
           $ref: '#/components/schemas/AutomatiskVurdering'
         manuellVurdering:
           type: object
+          required: ["navident", "begrunnelse"]
           description: Vurdert manuelt av saksbehandler
           properties:
             navident:
@@ -281,6 +283,7 @@ components:
     AutomatiskVurdering:
       type: object
       description: Vurdert automatisk av noen
+      required: ["system", "versjon", "grunnlagsdata"]
       properties:
         system:
           type: string
@@ -290,8 +293,11 @@ components:
           example: 2026.02.19-10.07-793bcfe
         grunnlagsdata:
           type: object
-          description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen
+          description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen. Her er keyen 'dynamisk', medlemskapId er bare et eksempel.
           properties:
             medlemskapId:
+              type: string
+              format: uuid
+            en-hvilken-som-helst-key:
               type: string
               format: uuid
