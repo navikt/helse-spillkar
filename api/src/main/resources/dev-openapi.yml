@@ -19,7 +19,7 @@ tags:
   - name: Send inn vurderinger av inngangsvilkår
 
 paths:
-    /vurderte-inngangsvilkår/alle:
+    /vurderte-inngangsvilkar/alle:
       post:
         summary: Henter ut alle samlinger av inngangsvilkår gjort på personen på et gitt skjæringstidspunkt
         tags:
@@ -40,7 +40,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/SamlingAvVurderteInngangsvilkårResponse'
 
-    /vurderte-inngangsvilkår/gjeldende:
+    /vurderte-inngangsvilkar/gjeldende:
       post:
         summary: Henter ut den gjeldende samlingen av inngangsvilkår gjort på personen på et gitt skjæringstidspunkt
         tags:
@@ -63,7 +63,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/GjeldendeSamlingAvVurderteInngangsvilkår'
 
-    /vurderte-inngangsvilkår/manuelle-vurderinger:
+    /vurderte-inngangsvilkar/manuelle-vurderinger:
       post:
         summary: Saksbehandler vurderer ett eller flere inngangsvilkår
         tags:
@@ -82,7 +82,7 @@ paths:
           '204':
             description: No content
 
-    /vurderte-inngangsvilkår/automatiske-vurderinger:
+    /vurderte-inngangsvilkar/automatiske-vurderinger:
       post:
         summary: Datamaskinen vurderer ett eller flere inngangsvilkår
         tags:
