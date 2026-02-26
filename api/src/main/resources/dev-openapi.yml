@@ -159,9 +159,13 @@ components:
       type: object
       description: Et vurdert vilkår har enten automatiskVurdering eller manuellVurdering. Aldri begge, men alltid en.
       oneOf:
-        - required: ["vilkårskode", "tidspunkt", "automatiskVurdering"]
-        - required: ["vilkårskode", "tidspunkt", "manuellVurdering"]
+        - required: ["id", "vilkårskode", "tidspunkt", "automatiskVurdering"]
+        - required: ["id", "vilkårskode", "tidspunkt", "manuellVurdering"]
       properties:
+        id:
+          type: string
+          format: uuid
+          description: Id for vurderingen. Samme ID kan være i flere samlinger. Da er det samme vurdering
         tidspunkt:
           type: string
           format: date-time
