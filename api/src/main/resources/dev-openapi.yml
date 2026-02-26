@@ -155,13 +155,20 @@ components:
           items:
             $ref: '#/components/schemas/AutomatiskVurdertInngangsvilkår'
 
-    VurdertInngangsvilkår:
+    VurdertInngangsvilkårFelles:
       type: object
-      description: Et vurdert vilkår har enten automatiskVurdering eller manuellVurdering. Aldri begge, men alltid en.
-      oneOf:
-        - required: [ "id", "vilkårskode", "tidspunkt", "automatiskVurdering" ]
-        - required: [ "id", "vilkårskode", "tidspunkt", "manuellVurdering" ]
+      description: Felles felter for et vurdert inngangsvilkår. Har enten automatiskVurdering eller manuellVurdering avhengig av vurderingstype.
+      discriminator:
+        propertyName: vurderingstype
+        mapping:
+          automatisk: '#/components/schemas/AutomatiskVurdertInngangsvilkårDetaljer'
+          manuell: '#/components/schemas/ManueltVurdertInngangsvilkårDetaljer'
+      required: [ "vurderingstype", "vilkårskode", "tidspunkt" ]
       properties:
+        vurderingstype:
+          type: string
+          description: Diskriminator som angir om vurderingen er automatisk eller manuell
+          example: automatisk
         id:
           type: string
           format: uuid
@@ -178,19 +185,36 @@ components:
           type: string
           description: Begrunnelse for oppfylt eller ikke oppfylt fra kodeverket. Optional verdi der hvor automatiske vurderinger ikke har klart å komme frem til en vurderingskode.
           example: MEDLEMSKAP_JA
-        automatiskVurdering:
-          $ref: '#/components/schemas/AutomatiskVurdering'
-        manuellVurdering:
-          type: object
-          required: [ "navident", "begrunnelse" ]
-          description: Vurdert manuelt av saksbehandler
+
+    AutomatiskVurdertInngangsvilkårDetaljer:
+      allOf:
+        - $ref: '#/components/schemas/VurdertInngangsvilkårFelles'
+        - type: object
+          required: [ "automatiskVurdering" ]
           properties:
-            navident:
-              type: string
-              example: P31337
-            begrunnelse:
-              type: string
-              example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
+            automatiskVurdering:
+              $ref: '#/components/schemas/AutomatiskVurdering'
+
+    ManueltVurdertInngangsvilkårDetaljer:
+      allOf:
+        - $ref: '#/components/schemas/VurdertInngangsvilkårFelles'
+        - type: object
+          required: [ "manuellVurdering" ]
+          properties:
+            manuellVurdering:
+              $ref: '#/components/schemas/ManuellVurdering'
+
+    ManuellVurdering:
+      type: object
+      required: [ "navident", "begrunnelse" ]
+      description: Vurdert manuelt av saksbehandler
+      properties:
+        navident:
+          type: string
+          example: P31337
+        begrunnelse:
+          type: string
+          example: Etter brev fra udi journalført med id 1337 fremkommer det at sykmeldte er medlem av folketrygden
 
     MinimalVurdertInngangsvilkår:
       type: object
@@ -227,7 +251,7 @@ components:
 
     AutomatiskVurdertInngangsvilkår:
       type: object
-      required: [ "vilkårskode", "tidspunkt", automatiskVurdering" ]
+      required: [ "vilkårskode", "tidspunkt", "automatiskVurdering" ]
       properties:
         tidspunkt:
           type: string
@@ -261,7 +285,7 @@ components:
         vurderteInngangsvilkår:
           type: array
           items:
-            $ref: '#/components/schemas/VurdertInngangsvilkår'
+            $ref: '#/components/schemas/VurdertInngangsvilkårFelles'
 
     GjeldendeSamlingAvVurderteInngangsvilkår:
       type: object
@@ -298,10 +322,5 @@ components:
         grunnlagsdata:
           type: object
           description: Pekere til fakta som er lagt til grunn for den automatiske vilkårsvurderingen. Her er keyen 'dynamisk', medlemskapId er bare et eksempel.
-          properties:
-            medlemskapId:
-              type: string
-              format: uuid
-            en-hvilken-som-helst-key:
-              type: string
-              format: uuid
+          additionalProperties:
+            type: string
